@@ -1,0 +1,18 @@
+# The site is built by GitHub Actions on every push, so the built copy never belongs in git.
+# Keeping generated files out of the repository is also what stops thirty students from getting merge conflicts in files nobody edited by hand.
+_site/
+
+# Python leftovers from running the build script locally.
+__pycache__/
+*.pyc
+
+# macOS writes these into every folder it looks at.
+.DS_Store
+
+# Latex build products, in case anyone compiles a PDF alongside the story.
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz

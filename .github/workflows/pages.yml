@@ -1,0 +1,48 @@
+# Rebuilds the public site every time anything lands on main.
+# This is what makes the story, the blame view and the commit tree appear on a URL you can project during class.
+name: Build and publish the site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let a merge that arrives mid-build queue up rather than cancel the one in flight, so the projected page always catches up.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The blame page and the tree page need the whole history, not just the last commit.
+          fetch-depth: 0
+
+      - name: Build the site
+        # HOT_LINES shades the suggested editing zone on the story page.
+        # Set it under Settings > Secrets and variables > Actions > Variables, or with: gh variable set HOT_LINES --body 12
+        run: python3 site/build.py --hot "${HOT_LINES:-0}"
+        env:
+          HOT_LINES: ${{ vars.HOT_LINES || 0 }}
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
