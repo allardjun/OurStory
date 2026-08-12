@@ -4,6 +4,27 @@ Everything you did by clicking buttons has a command behind it.
 These are those commands.
 You can run them in a Codespace (green **Code** button → **Codespaces** → **Create codespace on main**), which is a computer in your browser — nothing gets installed on your own machine.
 
+## First: a Codespace is a different computer
+
+This is the thing that confuses everybody, so it is worth getting straight before anything else.
+
+A Codespace is a whole separate machine with **its own copy** of the story.
+The copy on github.com is called **`origin`**.
+The two do not talk to each other on their own.
+
+- You edit `story.md` with the pencil on github.com → that change is now on `origin`. **Your Codespace still has the old version**, and `nano story.md` will show you the old text, until you run `git pull`.
+- You edit `story.md` in the Codespace → that change is on the Codespace only. Nobody else can see it, not even github.com, until you `git add`, `git commit` and `git push`.
+
+```bash
+git pull                   # bring github.com's version down to here
+git push                   # send this computer's version up to github.com
+```
+
+VS Code may show a small "↓1" near the branch name when github.com has something you do not.
+That is only a notification — your files do not change until you actually `git pull`.
+
+If you remember one thing: **nothing moves between the two until you ask it to.**
+
 ## Where am I, and what have I done?
 
 ```bash

@@ -145,6 +145,27 @@ This is the single thing most likely to flatten the lesson, and it is invisible 
 | `scripts/classmates.sh` | Walk the fork tree and pull every copy in as a remote. |
 | `scripts/tree.sh`, `scripts/blame.sh` | The terminal versions, for the Codespace demo. |
 
+## Codespaces, and how long they take
+
+**Measuring it.** From your own machine, time the whole thing from outside:
+
+```bash
+time gh codespace create --repo allardjun/OurStory-Bootcamp-2026 --branch main
+```
+
+That prints real wall-clock minutes.
+From inside a running Codespace, the Command Palette has **Codespaces: View Creation Log**, which timestamps each phase so you can see whether the time went on pulling the image or on the setup commands.
+
+**Does creating one before class make the next one faster?**
+Only in one specific way, but it is the way you want.
+
+- **Keeping the same Codespace: yes, and it is dramatic.** Create it before class, then *stop* it rather than deleting it. Resuming a stopped Codespace takes seconds, because the machine and its disk still exist. If you are demonstrating from your own screen, do exactly this: create it the night before, stop it, and resume it during class.
+- **Creating a fresh Codespace: no.** Every new Codespace is a new virtual machine. Yours having existed does not help the next one, and it certainly does not help a student's.
+
+**To make everyone's first launch fast, use prebuilds.** Repository **Settings → Codespaces → Set up prebuild**, for `main`. GitHub then builds the container ahead of time and keeps it ready, which turns minutes into seconds. It costs Actions minutes and some storage.
+
+One catch worth knowing before you rely on it: **prebuilds belong to a repository, and do not follow forks.** Students who open a Codespace on their own fork get a cold build regardless of what you have prebuilt. If you want the class to see a fast Codespace, have them open it on *your* instance repository, or treat Codespaces as the after-class bonus track that the README already makes it.
+
 ## Seeing the whole class from a terminal
 
 `./scripts/classmates.sh --list` prints the fork tree, including forks of forks, which is what your Group B students produce:
