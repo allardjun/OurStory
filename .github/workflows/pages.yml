@@ -41,6 +41,11 @@ jobs:
             echo "is_instance=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Install Graphviz
+        # Draws the commit tree on the tree page. If this ever fails the build still succeeds:
+        # build.py falls back to the ASCII graph when dot is missing.
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq graphviz
+
       - name: Build the site
         # HOT_LINES shades a suggested editing zone on the story page. It is off by default; see TEACHERS.md.
         run: python3 site/build.py --hot "${HOT_LINES:-0}"

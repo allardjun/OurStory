@@ -101,7 +101,7 @@ Roughly five minutes a step, about fifty minutes in total.
 | 4 | Group A merges them, and resolves the conflicts | Expect noise here. This is the point of the lesson, not an interruption. |
 | 5 | Group A opens pull requests to you | |
 | 6 | You merge them live, one at a time | Do this on the projector, slowly. Pull requests after the first will conflict. Do not fix them yourself — tell that student to click **Resolve conflicts**, and narrate what they are doing. |
-| 7 | Look at what you made | **The story**, then **Who wrote what**, then **The tree**. |
+| 7 | Look at what you made | **The story**, then **Who wrote what**, then **The tree** — which draws every fork fanning out and every merge coming back together, with each student's name on their own commit. Open the "Show the terminal version" fold underneath to point out that this is the same thing `git log --graph` prints. |
 
 ### The one timing rule
 
@@ -182,6 +182,37 @@ It does not touch the pristine template. Deleting an instance never endangers `a
 | `scripts/dry-run.sh` | Rehearse a whole session locally. |
 | `scripts/classmates.sh` | Walk the fork tree and pull every copy in as a remote. |
 | `scripts/tree.sh`, `scripts/blame.sh` | The terminal versions, for the Codespace demo. |
+| `scripts/tree-image.sh` | The commit tree as a standalone SVG and PNG, for slides. |
+| `scripts/tree-video.sh` | Optional Gource animation of the story being written. |
+
+## Pictures of the tree
+
+The **The tree** page draws the commit graph with Graphviz: student commits are labelled boxes in their own colour, merges are small junction dots, and time runs left to right.
+It is rebuilt on every merge along with the rest of the site, so it is live during class.
+Merges are deliberately unlabelled — you merge every pull request, so labelling them would print your name twenty times and squeeze the students out of their own picture.
+
+For a copy you can put in slides:
+
+```bash
+brew install graphviz          # once
+./scripts/tree-image.sh        # writes tree.svg and tree.png
+```
+
+The PNG is rendered at high resolution so it survives being projected and zoomed into.
+
+If Graphviz is not installed anywhere, nothing breaks: the site falls back to the ASCII graph on its own, and the workflow installs Graphviz for you on GitHub's runners.
+
+### The optional film
+
+```bash
+brew install gource ffmpeg
+./scripts/tree-video.sh        # writes ourstory.mp4
+```
+
+Gource replays the history with each contributor appearing by name.
+Know what it actually shows before you rely on it: gource visualises the *file tree* changing over time, and this repository is essentially one file, so you get everybody's name converging on `story.md` rather than a spreading tree.
+It is a good thirty seconds to end on, not a substitute for the commit graph.
+Try it on a `./scripts/dry-run.sh 20` history first and decide for yourself.
 
 ## Codespaces, and how long they take
 

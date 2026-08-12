@@ -36,6 +36,12 @@ git log --oneline          # the list of saves, newest first
 
 `./scripts/tree.sh --watch` redraws the tree every ten seconds, which is worth leaving open during class.
 
+If you have Graphviz installed (`brew install graphviz`), this draws the same tree as a picture instead:
+
+```bash
+./scripts/tree-image.sh    # writes tree.svg and tree.png
+```
+
 ## Seeing everybody else
 
 ```bash

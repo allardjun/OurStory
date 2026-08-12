@@ -171,6 +171,7 @@ body {
   -webkit-text-size-adjust: 100%;
 }
 .wrap { max-width: 52rem; margin: 0 auto; padding: 2rem 1.25rem 5rem; }
+.wrap.wide { max-width: min(1800px, 96vw); }
 header { border-bottom: 1px solid var(--rule); margin-bottom: 2rem; }
 .instance {
   font: 600 0.7rem/1 ui-sans-serif, system-ui, sans-serif;
@@ -221,8 +222,24 @@ nav a[aria-current] { color: var(--bg); background: var(--fg); border-color: var
 .who b { font-weight: 600; color: hsl(var(--h) 65% var(--accent-l)); }
 .who span { color: var(--dim); font-variant-numeric: tabular-nums; }
 
-/* Tree view: a wide, monospaced graph that scrolls on its own. */
+/* Tree view: a wide graph that scrolls on its own rather than stretching the page. */
 .tree { overflow-x: auto; background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 1rem; }
+
+/* The Graphviz drawing. Graphviz passes our class names through to the SVG, so the fills come from the page palette and follow the light and dark themes. */
+.gv svg { display: block; max-width: 100%; height: auto; }
+.gv .e > path { stroke: var(--dim); opacity: 0.55; }
+.gv .merge > path { stroke: var(--dim); opacity: 0.9; }
+.gv text { font-weight: 600; }
+.gv a:hover text { text-decoration: underline; }
+
+details.fold { margin-top: 1.25rem; }
+details.fold > summary {
+  cursor: pointer; color: var(--dim);
+  font: 600 0.85rem/1 ui-sans-serif, system-ui, sans-serif;
+  padding: 0.5rem 0; list-style-position: inside;
+}
+details.fold > summary:hover { color: var(--fg); }
+details.fold[open] > summary { margin-bottom: 0.6rem; }
 .tree pre {
   margin: 0; font: 0.8rem/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
   white-space: pre;
@@ -240,10 +257,13 @@ a { color: inherit; }
 """
 
 
-def shell(page, title, instance, heading, byline, body, links):
+def shell(page, title, instance, heading, byline, body, links, wide=False):
     """Wrap page content in the shared chrome."""
+    cls = " wide" if wide else ""
+    # Built without escaped quotes inside the f-string expression, which older Python versions reject.
+    current = ' aria-current="page"'
     nav = "".join(
-        f'<a href="{href}"{" aria-current=\"page\"" if href == page else ""}>{html.escape(label)}</a>'
+        '<a href="{}"{}>{}</a>'.format(href, current if href == page else "", html.escape(label))
         for href, label in PAGES
     )
     sub = f'<p class="byline">{inline(byline)}</p>' if byline else ""
@@ -257,7 +277,7 @@ def shell(page, title, instance, heading, byline, body, links):
 <style>{CSS}</style>
 </head>
 <body>
-<div class="wrap">
+<div class="wrap{cls}">
 <header>{inst}<h1>{html.escape(heading)}</h1>{sub}<nav>{nav}</nav></header>
 {body}
 <footer>{links}</footer>
@@ -332,6 +352,123 @@ def render_tree(root, colors, url):
     return '<div class="tree"><pre>' + "\n".join(rows) + "</pre></div>"
 
 
+def hsl_hex(h, s, l):
+    """Convert an HSL colour to a hex string, for standalone images that have no stylesheet to inherit from."""
+    import colorsys
+    r, g, b = colorsys.hls_to_rgb((h % 360) / 360.0, l, s)
+    return "#{:02x}{:02x}{:02x}".format(int(r * 255), int(g * 255), int(b * 255))
+
+
+def commit_graph(root):
+    """Read the commit DAG: one entry per commit, with its parents."""
+    sep = "\x1f"
+    out = run(
+        ["git", "log", "--all", "--date-order", "--date=short",
+         f"--pretty=format:%H{sep}%P{sep}%an{sep}%ad{sep}%s"],
+        cwd=root,
+    )
+    if not out:
+        return []
+
+    commits = []
+    for raw in out.split("\n"):
+        parts = raw.split(sep)
+        if len(parts) < 5:
+            continue
+        sha, parents, author, date, subject = parts[0], parts[1], parts[2], parts[3], sep.join(parts[4:])
+        commits.append({
+            "sha": sha,
+            "parents": [p for p in parents.split() if p],
+            "author": author,
+            "date": date,
+            "subject": subject,
+        })
+    return commits
+
+
+def build_dot(commits, colors, url):
+    """Write the commit DAG as Graphviz DOT.
+
+    Each commit becomes a node carrying a CSS class rather than a baked-in colour, so that the page's light and dark palettes can drive the fills.
+    Edges run from a commit to each of its parents, which is what draws a merge as a join of two lines.
+    """
+    hues = {}
+    for c in commits:
+        hues.setdefault(c["author"], colors.get(c["author"], 220))
+    index = {a: i for i, a in enumerate(hues)}
+
+    lines = [
+        "digraph story {",
+        '  bgcolor="transparent";',
+        "  rankdir=RL;",   # edges point from a commit to its parent, so RL puts the oldest commit on the left and time runs left to right
+        '  node [shape=box, style="filled,rounded", fontname="Helvetica,Arial,sans-serif",'
+        ' fontsize=16, penwidth=1.4, margin="0.12,0.06", height=0.3];',
+        '  edge [arrowhead=none, penwidth=1.4];',
+        "  nodesep=0.18;",
+        "  ranksep=0.5;",
+    ]
+
+    known = {c["sha"] for c in commits}
+    for c in commits:
+        short = c["sha"][:7]
+        tooltip = f'{short}  {c["subject"]}'.replace('"', "'")
+        merge = len(c["parents"]) > 1
+        attrs = [
+            f'tooltip="{tooltip}"',
+            f'class="c a{index[c["author"]]}"',
+        ]
+        if merge:
+            # A merge is drawn as a small junction dot rather than a labelled box.
+            # In this activity the instructor merges every pull request, so labelling all of them would fill the picture with the same name twenty times and squeeze everyone else out.
+            attrs += ['label=""', "shape=circle", "width=0.16", "height=0.16", "fixedsize=true"]
+        else:
+            label = c["author"].replace('"', "'")
+            attrs.insert(0, 'label="' + label + '"')
+        if url:
+            attrs.append(f'URL="{url}/commit/{c["sha"]}"')
+            attrs.append('target="_blank"')
+        lines.append(f'  "{c["sha"]}" [{", ".join(attrs)}];')
+
+    for c in commits:
+        for p in c["parents"]:
+            if p in known:
+                # A commit with more than one parent is a merge; mark those edges so they can be styled apart.
+                klass = "e merge" if len(c["parents"]) > 1 else "e"
+                lines.append(f'  "{c["sha"]}" -> "{p}" [class="{klass}"];')
+
+    lines.append("}")
+    return "\n".join(lines), hues, index
+
+
+def render_tree_svg(root, colors, url):
+    """Render the commit DAG as an inline SVG using Graphviz, or return None if dot is unavailable."""
+    commits = commit_graph(root)
+    if not commits:
+        return None
+
+    dot_src, hues, index = build_dot(commits, colors, url)
+    try:
+        proc = subprocess.run(["dot", "-Tsvg"], input=dot_src,
+                              capture_output=True, text=True, check=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None
+
+    svg = proc.stdout
+    # Drop the XML preamble and the DOCTYPE so the SVG can be inlined in HTML.
+    svg = svg[svg.index("<svg"):] if "<svg" in svg else svg
+    # Let the SVG scale to the width of its container rather than its natural pixel size.
+    svg = re.sub(r'<svg width="\d+pt" height="\d+pt"', '<svg', svg, count=1)
+
+    # One rule per author, keyed on the class Graphviz passed through.
+    rules = "\n".join(
+        f'.gv .a{i} > polygon, .gv .a{i} > ellipse, .gv .a{i} > path {{ fill: hsl({hues[a]} 70% 50% / var(--tint));'
+        f' stroke: hsl({hues[a]} 65% var(--accent-l)); }}\n'
+        f'.gv .a{i} text {{ fill: hsl({hues[a]} 65% var(--accent-l)); }}'
+        for a, i in index.items()
+    )
+    return f'<style>{rules}</style><div class="tree gv">{svg}</div>'
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", default=".")
@@ -339,6 +476,8 @@ def main():
     ap.add_argument("--out", default="_site")
     ap.add_argument("--hot", type=int, default=0,
                     help="highlight file lines up to this number as the suggested editing zone")
+    ap.add_argument("--dot", action="store_true",
+                    help="print the commit graph as Graphviz DOT and exit, instead of building the site")
     args = ap.parse_args()
 
     root = Path(args.root).resolve()
@@ -353,6 +492,26 @@ def main():
     blamed = blame(root, args.story, lines)
     colors, counts, ordered = author_colors(root, lines)
     url = repo_url(root)
+
+    if args.dot:
+        # Used by scripts/tree-image.sh so the standalone image and the web page are drawn from exactly the same graph.
+        commits = commit_graph(root)
+        if not commits:
+            sys.exit("no history to draw yet")
+        dot_src, hues, index = build_dot(commits, colors, url)
+        # Standalone images have no stylesheet behind them, so bake the colours in.
+        baked = []
+        for line in dot_src.split("\n"):
+            m = re.search(r'class="c a(\d+)"', line)
+            if m:
+                hue = list(hues.values())[int(m.group(1))]
+                line = line.replace(
+                    f'class="c a{m.group(1)}"',
+                    f'color="{hsl_hex(hue, 0.65, 0.45)}", fillcolor="{hsl_hex(hue, 0.70, 0.92)}",'
+                    f' fontcolor="{hsl_hex(hue, 0.65, 0.32)}"')
+            baked.append(line)
+        print("\n".join(baked))
+        return
 
     out_dir = root / args.out
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -382,10 +541,21 @@ def main():
         encoding="utf-8")
 
     net = f'<a href="{url}/network">the fork network</a> &middot; ' if url else ""
+    ascii_tree = render_tree(root, colors, url)
+    svg_tree = render_tree_svg(root, colors, url)
+    if svg_tree:
+        # The picture first, with the terminal version folded away underneath.
+        # They are the same history drawn two ways, which is the bridge to the Codespace track.
+        tree_body = (svg_tree +
+                     '<details class="fold"><summary>Show the terminal version</summary>'
+                     + ascii_tree + "</details>")
+    else:
+        tree_body = ascii_tree
+
     (out_dir / "tree.html").write_text(
         shell("tree.html", f"The tree — {title}", instance,
               "The tree", "Every commit, and every merge that brought them together.",
-              render_tree(root, colors, url), net + links),
+              tree_body, net + links, wide=True),
         encoding="utf-8")
 
     print(f"wrote {out_dir}/index.html, blame.html, tree.html "

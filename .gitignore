@@ -16,3 +16,9 @@ __pycache__/
 *.log
 *.out
 *.synctex.gz
+
+# Images produced by scripts/tree-image.sh and scripts/tree-video.sh, which are generated on demand.
+*.dot
+tree.svg
+tree.png
+*.mp4
