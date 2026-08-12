@@ -39,6 +39,8 @@ for n, text in enumerate(pathlib.Path("story.md").read_text().split("\n"), start
     s = text.strip()
     if not s:
         continue
+    if s.startswith("<!--") and s.endswith("-->"):
+        continue
     if not seen_title and s.startswith("# "):
         seen_title = True
         continue

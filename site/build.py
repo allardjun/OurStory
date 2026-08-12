@@ -67,9 +67,16 @@ def read_story(path):
     if raw and raw[-1] == "":
         raw.pop()
 
+    # A story marked as verse keeps every line break, because in a poem the line break is the form rather than sentence wrapping.
+    # Prose is reflowed into paragraphs on the story page, so that source written one-sentence-per-line reads as ordinary prose once published.
+    # The marker sits at the end of the file, away from the first dozen lines where students overwhelmingly edit.
+    verse = "<!-- verse -->" in "\n".join(raw)
+
     title, byline, body = None, None, []
     for i, text in enumerate(raw, start=1):
         stripped = text.strip()
+        if stripped.startswith("<!--") and stripped.endswith("-->"):
+            continue
         if title is None and stripped.startswith("# "):
             title = stripped[2:].strip()
             continue
@@ -85,7 +92,7 @@ def read_story(path):
     while body and not body[-1].text.strip():
         body.pop()
 
-    return title or "Our story", byline, body
+    return title or "Our story", byline, body, verse
 
 
 def inline(text):
@@ -193,7 +200,13 @@ nav a[aria-current] { color: var(--bg); background: var(--fg); border-color: var
 }
 .note code { font-size: 0.95em; }
 
-/* The story, with a line-number gutter that matches GitHub's editor. */
+/* The story as something to read. Prose reflows into paragraphs; verse keeps its own line breaks. */
+.read p { margin: 0 0 1.15rem; }
+.read.verse p { margin: 0 0 1.6rem; }
+.read.verse .v { text-indent: 0; }
+.read p:last-child { margin-bottom: 0; }
+
+/* The story as a list of lines, with a gutter that matches GitHub's editor. */
 .story { display: grid; grid-template-columns: 3.2rem 1fr; row-gap: 0.15rem; }
 .n {
   font: 0.72rem/1.75 ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -307,6 +320,32 @@ def render_story(lines, blamed, colors, hot):
         out.append(f'<div class="{klass}"{style}{title}>{inline(line.text)}</div>')
     out.append("</div>")
     return "\n".join(out)
+
+
+def render_reading(lines, verse):
+    """Render the story as something to read, rather than as a list of lines.
+
+    Prose is reflowed: the source is written one sentence per line, and those sentences join back into a paragraph here, which is what a reader expects to see.
+    Verse keeps every line exactly where the poet put it.
+    Blank lines separate paragraphs in both cases.
+    """
+    blocks, current = [], []
+    for line in lines:
+        if line.text.strip():
+            current.append(line.text.strip())
+        elif current:
+            blocks.append(current)
+            current = []
+    if current:
+        blocks.append(current)
+
+    out = []
+    for block in blocks:
+        if verse:
+            out.append('<p class="v">' + "<br>\n".join(inline(t) for t in block) + "</p>")
+        else:
+            out.append("<p>" + inline(" ".join(block)) + "</p>")
+    return f'<div class="read{" verse" if verse else ""}">' + "\n".join(out) + "</div>"
 
 
 def render_legend(colors, counts, ordered):
@@ -488,7 +527,7 @@ def main():
     instance_file = root / "instance.txt"
     instance = instance_file.read_text(encoding="utf-8").strip() if instance_file.exists() else ""
 
-    title, byline, lines = read_story(story_path)
+    title, byline, lines, verse = read_story(story_path)
     blamed = blame(root, args.story, lines)
     colors, counts, ordered = author_colors(root, lines)
     url = repo_url(root)
@@ -527,7 +566,8 @@ def main():
 
     (out_dir / "index.html").write_text(
         shell("index.html", title, instance, title, byline,
-              hot_note + render_story(lines, False, colors, args.hot), links),
+              hot_note + (render_story(lines, False, colors, args.hot)
+                          if args.hot else render_reading(lines, verse)), links),
         encoding="utf-8")
 
     if blamed:

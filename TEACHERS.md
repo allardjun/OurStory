@@ -175,7 +175,7 @@ It does not touch the pristine template. Deleting an instance never endangers `a
 | | |
 | - | - |
 | `story.md` | The shared document. The only file students touch. |
-| `stories/` | The four base texts, trimmed short so that collisions actually happen. |
+| `stories/` | The five base texts the class votes between. |
 | `site/build.py` | Builds the three pages. No dependencies, so it runs anywhere. |
 | `site/check_story.py` | The pull-request check. Written to be read by a beginner. |
 | `scripts/new-instance.sh` | Idempotent per-class setup. |
@@ -255,6 +255,8 @@ This is the best terminal counterpart to the network graph, and it is worth doin
 ## Notes on the design
 
 **Why the stories are short.** Conflict frequency is entirely determined by class size divided by the number of editable lines. The 2024 story was long enough that collisions were down to luck, and most students never saw one. Each base text here is trimmed to about twenty lines, and the editing zone narrows it further.
+
+**Prose reflows, verse does not.** The source is written one sentence per line, and on the story page prose sentences join back up into paragraphs, so the published version reads like a document rather than like a file. Poems must not be treated that way — in verse the line break *is* the form — so *The Fresh Prince*, *The Raven* and *The Cyclops* carry a `<!-- verse -->` marker and keep every line exactly where it was written. The marker sits at the end of the file, away from the first dozen lines where students overwhelmingly edit. If you add a story of your own that is verse, add the marker; if you leave it off, the story reflows. The "Who wrote what" page always shows one line per line, whichever kind of story it is, because that view is about the file rather than about the reading.
 
 **Why line numbers are file line numbers.** The numbers in the gutter of the story page are the same ones GitHub shows in its editor, including the gaps where blank lines are. They look slightly odd, and they are correct, which matters more when a beginner is trying to find line 9.
 
