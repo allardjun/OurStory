@@ -132,6 +132,44 @@ This is the single thing most likely to flatten the lesson, and it is invisible 
 
 **A student's fork has no Actions.** Forks have workflows disabled until the owner enables them, so Group A will not see green ticks on the pull requests their partners send them. This is fine and worth one sentence: the checks run in *your* repository, where the story actually lives.
 
+## When the class is over
+
+### Archiving it (what you probably want)
+
+An instance is the artifact the class made, so the usual right answer is to keep it and make it read-only:
+
+```bash
+gh repo archive allardjun/OurStory-Bootcamp-2026 --yes
+```
+
+The site, the history and everyone's names stay exactly where they are, and nothing can be changed again.
+Delete any Codespaces separately, because those do keep costing you storage:
+
+```bash
+gh codespace delete --repo allardjun/OurStory-Bootcamp-2026
+```
+
+### Deleting it completely (for test instances)
+
+Deleting requires a scope that `gh auth login` does not grant by default, so the first command fails with a permissions error until you have run the second:
+
+```bash
+gh auth refresh -s delete_repo                              # once, ever
+
+gh codespace delete --repo allardjun/OurStory-test1-spatula  # do this first
+gh repo delete allardjun/OurStory-test1-spatula --yes        # permanent
+rm -rf ~/git/pub/OurStory-test1-spatula                      # if you cloned it
+```
+
+`gh repo delete` is immediate and irreversible.
+It takes the history, the pull requests, the Actions logs and the published site with it, and there is no undo.
+
+**Two things it does not do.**
+
+It does not delete your students' forks — those repositories belong to them, and you have no way to remove them. When you delete a repository that has forks, GitHub promotes one of the forks to be the new root of the network, and the rest carry on hanging off it. So the story survives in your students' accounts whatever you do, which is worth knowing both as reassurance and as a reason not to put anything in a story you would mind outliving the class.
+
+It does not touch the pristine template. Deleting an instance never endangers `allardjun/OurStory`; check the repository name in the command before running it, since that is the one mistake here that actually costs you something.
+
 ## What is in here
 
 | | |
