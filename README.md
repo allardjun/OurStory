@@ -1,3 +1,11 @@
+<!-- template-only -->
+> **This is the pristine template, not a class.**
+> If you are a student and someone sent you here by mistake, you want your own class's copy of this repository — ask your instructor for the link, and do not fork this one.
+> If you are running the activity, start with [TEACHERS.md](TEACHERS.md).
+>
+> Everything below is what your students will read once you have made an instance.
+
+<!-- /template-only -->
 # Let's write a short story together
 
 Everyone in this room is going to change one line of the same story, at the same time, and we are going to end up with a single story that has all of our edits in it.

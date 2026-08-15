@@ -51,13 +51,41 @@ gh repo clone "$TARGET" "$WORK/repo" -- --quiet
 cd "$WORK/repo"
 
 printf '%s\n' "$INSTANCE_NAME" > instance.txt
-if ! git diff --quiet -- instance.txt; then
-  git add instance.txt
-  git commit -qm "Set the instance name to $INSTANCE_NAME"
+
+# An instance is not the template, so the two documents that say so out loud have to be corrected here.
+# TEACHERS.md is replaced by a stub pointing home: the full runbook only makes sense in the template, and every word of it would otherwise be forked by every student.
+# The README keeps its student-facing text, but loses the banner that only belongs on the template.
+TEMPLATE_URL="https://github.com/$TEMPLATE"
+cat > TEACHERS.md <<EOF
+# Running this activity
+
+This repository is **one instance** of the OurStory activity — the copy that a class forks.
+It is not the place to make changes to how the activity works.
+
+The instructor's runbook lives with the pristine template, here:
+
+<$TEMPLATE_URL/blob/main/TEACHERS.md>
+
+Students: you want [README.md](README.md), not this file.
+EOF
+
+python3 - <<'PY'
+import pathlib, re
+p = pathlib.Path("README.md")
+text = p.read_text(encoding="utf-8")
+# Strip the template-only banner, if it is still there. Safe to run on a README that has already been stripped.
+stripped = re.sub(r"<!-- template-only -->.*?<!-- /template-only -->\n*", "", text, flags=re.S)
+if stripped != text:
+    p.write_text(stripped, encoding="utf-8")
+PY
+
+if ! git diff --quiet; then
+  git add instance.txt TEACHERS.md README.md
+  git commit -qm "Set up the $INSTANCE_NAME instance"
   git push -q
-  echo "  instance name recorded"
+  echo "  instance name recorded, TEACHERS.md pointed back at the template"
 else
-  echo "  instance name already set"
+  echo "  already set up"
 fi
 
 # 3. Turn on GitHub Pages, published by the workflow rather than from a branch.

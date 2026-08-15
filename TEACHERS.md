@@ -40,6 +40,10 @@ gh repo edit allardjun/OurStory --template
 That is the whole setup.
 It creates `allardjun/OurStory-Bootcamp-2026`, records the instance name so it appears on the site, turns on GitHub Pages, sets the editing-zone size, puts the site link in the repository's About box, and prints every URL you will need.
 
+It also corrects the two documents that would otherwise lie to the class.
+An instance is not the template, so this file is replaced in the instance by a short stub pointing back here, and the README loses the template-only banner at its top.
+Without that, every student would fork a copy of this runbook telling them they were holding the pristine template.
+
 **It is safe to run twice.**
 It creates what is missing and leaves what exists alone, so if your wifi drops halfway through, just run it again.
 
@@ -255,6 +259,8 @@ This is the best terminal counterpart to the network graph, and it is worth doin
 ## Notes on the design
 
 **Why the stories are short.** Conflict frequency is entirely determined by class size divided by the number of editable lines. The 2024 story was long enough that collisions were down to luck, and most students never saw one. Each base text here is trimmed to about twenty lines, and the editing zone narrows it further.
+
+**Why the instance keeps a stub instead of nothing.** `TEACHERS.md` could simply be deleted from each instance, and that would also stop it claiming to be the template. A stub is kept instead because the instance repository is the one you actually have open during class — when you want the troubleshooting list or the commands for archiving afterwards, one link gets you there. It also gives a student who opens the file a clear answer rather than a 404. If you would rather it were gone entirely, replace the `cat > TEACHERS.md` block in `scripts/new-instance.sh` with `rm -f TEACHERS.md`.
 
 **Prose reflows, verse does not.** The source is written one sentence per line, and on the story page prose sentences join back up into paragraphs, so the published version reads like a document rather than like a file. Poems must not be treated that way — in verse the line break *is* the form — so *The Fresh Prince*, *The Raven* and *The Cyclops* carry a `<!-- verse -->` marker and keep every line exactly where it was written. The marker sits at the end of the file, away from the first dozen lines where students overwhelmingly edit. If you add a story of your own that is verse, add the marker; if you leave it off, the story reflows. The "Who wrote what" page always shows one line per line, whichever kind of story it is, because that view is about the file rather than about the reading.
 
