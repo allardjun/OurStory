@@ -92,49 +92,6 @@ With `S` students choosing among `L` lines, the fraction who collide is roughly 
 Reach for this only if a rehearsal comes out flat.
 Resolving a conflict is a class-level outcome: it is enough that several happen and the room watches them being fixed, and forcing every single student into one costs you the free choice of line, which is most of the fun.
 
-## The run sheet
-
-Roughly five minutes a step, about fifty minutes in total.
-
-| # | What happens | You are doing |
-| - | ------------ | ------------- |
-| 0 | Everyone rolls a 1 or a 2 for their group; class votes on a story | Open the **Pick the story** workflow in the Actions tab, choose the winner from the dropdown, press **Run workflow**. The site rebuilds in under a minute. |
-| 1 | Everyone forks — Group A from you, Group B from a Group A student | Project the **fork network** page and watch it grow. This is dead time otherwise, and it is the best moment to explain what a fork is. |
-| 2 | Everyone edits one line, anywhere, and commits | Project **The story** page. Walk the room. |
-| 3 | Group B opens pull requests to their Group A partner | |
-| 4 | Group A merges them, and resolves the conflicts | Expect noise here. This is the point of the lesson, not an interruption. |
-| 5 | Group A opens pull requests to you | |
-| 6 | You merge them live, one at a time | Do this on the projector, slowly. Pull requests after the first will conflict. Do not fix them yourself — tell that student to click **Resolve conflicts**, and narrate what they are doing. |
-| 7 | Look at what you made | **The story**, then **Who wrote what**, then **The tree** — which draws every fork fanning out and every merge coming back together, with each student's name on their own commit. Open the "Show the terminal version" fold underneath to point out that this is the same thing `git log --graph` prints. |
-
-### The one timing rule
-
-**Everybody must fork before any merging starts.**
-
-A student who forks after their classmates' work has already been merged is copying a version that already contains it, so they cannot collide with it and will never see a conflict.
-Hold the whole room at step 1 until every fork exists, and do not merge anything before then.
-This is the single thing most likely to flatten the lesson, and it is invisible if you do not know to look for it.
-
-### Talking points that land
-
-- **On the fork network page:** every one of those dots is a complete copy of the entire history. Nobody asked permission for it.
-- **When the first conflict appears:** git is not confused and has not lost anything. It knows exactly what both people wrote and is refusing to guess which one is right, because that is a decision only a person can make.
-- **On the "Who wrote what" page:** the colour is whoever *last* touched the line. If you resolved a conflict, the line is yours now, and the person you overwrote has vanished from this view even though their work is still in the history. This is what blame does and does not tell you, and it is a good moment to say that "blame" is a terrible name for it.
-- **On the green tick:** that is a program somebody wrote, running on somebody else's computer, every time anyone proposes a change. Nobody ran it on purpose. That is all continuous integration is.
-
-## When something goes wrong
-
-**A student cannot find the Fork button.** They are probably already inside their own fork. The top of the page tells you whose copy you are in.
-
-**A Group B student cannot find anyone to fork from.** Group A has not finished. Give them the fork-network page and let them watch, or move them to Group A.
-
-**The site has not updated.** Check the Actions tab of the instance repo. The build takes 30–60 seconds after each merge; Pages can take another minute to serve it.
-
-**A pull request shows a red cross.** That is the checker doing its job. Open it and read the message — it is written for students, and it is almost always leftover `<<<<<<<` markers or a resolution that deleted most of the story.
-
-**Pages is not switched on.** Repository Settings → Pages → Source: **GitHub Actions**. Then re-run `new-instance.sh`.
-
-**A student's fork has no Actions.** Forks have workflows disabled until the owner enables them, so Group A will not see green ticks on the pull requests their partners send them. This is fine and worth one sentence: the checks run in *your* repository, where the story actually lives.
 
 ## When the class is over
 
@@ -168,9 +125,6 @@ rm -rf ~/git/pub/OurStory-test1-spatula                      # if you cloned it
 `gh repo delete` is immediate and irreversible.
 It takes the history, the pull requests, the Actions logs and the published site with it, and there is no undo.
 
-**Two things it does not do.**
-
-It does not delete your students' forks — those repositories belong to them, and you have no way to remove them. When you delete a repository that has forks, GitHub promotes one of the forks to be the new root of the network, and the rest carry on hanging off it. So the story survives in your students' accounts whatever you do, which is worth knowing both as reassurance and as a reason not to put anything in a story you would mind outliving the class.
 
 It does not touch the pristine template. Deleting an instance never endangers `allardjun/OurStory`; check the repository name in the command before running it, since that is the one mistake here that actually costs you something.
 
